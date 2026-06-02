@@ -1,57 +1,104 @@
 "use client";
+
 import Link from "next/link";
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Axios } from "axios";
-
-
+import axios from "axios";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
-    const [user, setUser] = React.useState({
-        email: "",
-        password: "",
-    }) 
+  const router = useRouter();
 
-    const onLogin = async () => {
+  const [user, setUser] = React.useState({
+    email: "",
+    password: "",
+  });
 
+  const [loading, setLoading] = React.useState(false);
+
+  const buttonDisabled = React.useMemo(() => {
+    return !(user.email.trim().length > 0 && user.password.trim().length > 0);
+  }, [user.email, user.password]);
+
+  const onLogin = async () => {
+
+    if (buttonDisabled || loading) return;
+
+    try {
+      setLoading(true);
+
+      const response = await axios.post("/api/users/login", user);
+
+      console.log("Login success", response.data);
+      toast.success("Login successful");
+      router.push("/profile");
+    } catch (error) {
+      let errorMessage = "An error occurred";
+
+      if (axios.isAxiosError(error)) {
+        errorMessage =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.message;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      console.log("Login failed", errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    return (
-        <div className="flex justify-center items-center min-h-screen">
-            <div className="flex flex-col w-80 p-6 border rounded-lg shadow-md">
-                <h1 className="text-2xl font-bold mb-4 text-center">Login</h1>
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <form
+        onSubmit={onLogin}
+        className="flex w-80 flex-col rounded-lg border p-6 shadow-md"
+      >
+        <h1 className="mb-4 text-center text-2xl font-bold">Login</h1>
 
-                <label htmlFor="email" className="mb-1">Email</label>
-                <input 
-                    className="p-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-gray-600"
-                    id="email"
-                    type="text"
-                    value={user.email}
-                    onChange={(e) => setUser({...user, email: e.target.value})}
-                    placeholder="email"
-                />
+        <label htmlFor="email" className="mb-1">
+          Email
+        </label>
+        <input
+          className="mb-4 rounded-lg border border-gray-300 p-2 focus:border-gray-600 focus:outline-none"
+          id="email"
+          type="email"
+          value={user.email}
+          onChange={(e) => setUser({ ...user, email: e.target.value })}
+          placeholder="email"
+        />
 
-                <label htmlFor="password" className="mb-1">Password</label>
-                <input 
-                    className="p-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-gray-600"
-                    id="password"
-                    type="password"
-                    value={user.password}
-                    onChange={(e) => setUser({...user, password: e.target.value})}
-                    placeholder="password"
-                />
+        <label htmlFor="password" className="mb-1">
+          Password
+        </label>
+        <input
+          className="mb-4 rounded-lg border border-gray-300 p-2 focus:border-gray-600 focus:outline-none"
+          id="password"
+          type="password"
+          value={user.password}
+          onChange={(e) => setUser({ ...user, password: e.target.value })}
+          placeholder="password"
+        />
 
-                <button
-                    onClick={onLogin}
-                    className="p-2 bg-green-500 text-white rounded-lg mb-4 hover:bg-green-600 transition"
-                >
-                    Login here
-                </button>
+        <button
+          type="submit"
+          disabled={buttonDisabled || loading}
+          className={`mb-4 rounded-lg p-2 transition ${
+            buttonDisabled || loading
+              ? "cursor-not-allowed bg-green-300"
+              : "bg-green-500 text-white hover:bg-green-600"
+          }`}
+        >
+          {loading ? "Logging in..." : "Login here"}
+        </button>
 
-                <Link href="/signup" className="text-blue-500 text-center hover:underline">
-                    Visit signup page
-                </Link>
-            </div>
-        </div>
-    )
+        <Link href="/signup" className="text-center text-blue-500 hover:underline">
+          Visit signup page
+        </Link>
+      </form>
+    </div>
+  );
 }

@@ -2,7 +2,8 @@
 import Link from "next/link";
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Axios } from "axios";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 
 
@@ -15,9 +16,24 @@ export default function SignupPage() {
         username: "",
     }) 
 
-    const [buttonDisabled, setButttonDisabled] = React.useState(false)
-    const onsignup = async () => {
+    const [buttonDisabled, setButtonDisabled] = React.useState(true)
 
+    React.useEffect(() => {
+        setButtonDisabled(!(user.email && user.password && user.username))
+    }, [user])
+
+    const onsignup = async () => {
+        try {
+            setButtonDisabled(true)
+            const response = await axios.post("/api/users/signup", user)
+            console.log("Sign up success", response.data)
+            router.push("/login")
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "An error occurred"
+            toast.error(errorMessage)
+        } finally {
+            setButtonDisabled(false)
+        } 
     }
 
     return (
@@ -57,9 +73,10 @@ export default function SignupPage() {
 
                 <button
                     onClick={onsignup}
-                    className="p-2 bg-blue-500 text-white rounded-lg mb-4 hover:bg-blue-600 transition"
+                    disabled={buttonDisabled}
+                    className={`p-2 bg-blue-500 text-white rounded-lg mb-4 hover:bg-blue-600 transition ${buttonDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                    Signup here
+                    {buttonDisabled ? "Signing up..." : "Signup here"}
                 </button>
 
                 <Link href="/login" className="text-blue-500 text-center hover:underline">
