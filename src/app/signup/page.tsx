@@ -16,29 +16,47 @@ export default function SignupPage() {
         username: "",
     }) 
 
-    const [buttonDisabled, setButtonDisabled] = React.useState(true)
+    const [loading, setLoading] = React.useState(false)
 
-    React.useEffect(() => {
-        setButtonDisabled(!(user.email && user.password && user.username))
-    }, [user])
+    const buttonDisabled = React.useMemo(() => {
+        return !(
+            user.email.trim().length > 0 &&
+            user.password.trim().length > 0 &&
+            user.username.trim().length > 0
+        )
+    }, [user.email, user.password, user.username])
 
-    const onsignup = async () => {
+    const onsignup = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        if (buttonDisabled || loading) return
+
         try {
-            setButtonDisabled(true)
+            setLoading(true)
             const response = await axios.post("/api/users/signup", user)
             console.log("Sign up success", response.data)
+            toast.success("Signup successful")
             router.push("/login")
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "An error occurred"
+            let errorMessage = "An error occurred"
+
+            if (axios.isAxiosError(error)) {
+                errorMessage =
+                    error.response?.data?.message ||
+                    error.response?.data?.error ||
+                    error.message
+            } else if (error instanceof Error) {
+                errorMessage = error.message
+            }
+
             toast.error(errorMessage)
         } finally {
-            setButtonDisabled(false)
+            setLoading(false)
         } 
     }
 
     return (
         <div className="flex justify-center items-center min-h-screen">
-            <div className="flex flex-col w-80 p-6 border rounded-lg shadow-md">
+            <form onSubmit={onsignup} className="flex flex-col w-80 p-6 border rounded-lg shadow-md">
                 <h1 className="text-2xl font-bold mb-4 text-center">SignUp</h1>
 
                 <label htmlFor="username" className="mb-1">Username</label>
@@ -72,17 +90,17 @@ export default function SignupPage() {
                 />
 
                 <button
-                    onClick={onsignup}
-                    disabled={buttonDisabled}
+                    type="submit"
+                    disabled={buttonDisabled || loading}
                     className={`p-2 bg-blue-500 text-white rounded-lg mb-4 hover:bg-blue-600 transition ${buttonDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                    {buttonDisabled ? "Signing up..." : "Signup here"}
+                    {loading ? "Signing up..." : "Signup here"}
                 </button>
 
                 <Link href="/login" className="text-blue-500 text-center hover:underline">
                     Visit login page
                 </Link>
-            </div>
+            </form>
         </div>
     )
 }

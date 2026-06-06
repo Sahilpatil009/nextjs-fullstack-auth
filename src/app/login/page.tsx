@@ -20,8 +20,8 @@ export default function LoginPage() {
     return !(user.email.trim().length > 0 && user.password.trim().length > 0);
   }, [user.email, user.password]);
 
-  const onLogin = async () => {
-
+  const onLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (buttonDisabled || loading) return;
 
     try {

@@ -9,7 +9,14 @@ export async function POST(request: NextRequest) {
         const reqBody = await request.json()
         const {username, email, password} = reqBody
 
-        console.log(reqBody)
+        if (!username || !email || !password) {
+            return NextResponse.json(
+                {error: "Username, email and password are required"},
+                {status: 400}
+            )
+        }
+
+        await connect()
 
         const user = await User.findOne({email})
 
@@ -28,8 +35,6 @@ export async function POST(request: NextRequest) {
         })
         
         const savedUser = await newUser.save()
-        console.log(savedUser);
-
         return NextResponse.json({
             message: "User created successfully",
             success: true,
@@ -42,5 +47,3 @@ export async function POST(request: NextRequest) {
             {status: 500})
     }
 }
-
-connect()
